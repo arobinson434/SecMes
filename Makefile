@@ -11,9 +11,6 @@ EXE		  = secmes
 SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRCS))
 
-#${BUILD_DIR}/%.o:${SRC_DIR}/%.cpp
-#	${CC} -o $@ $<
-
 all: ${BUILD_DIR} ${EXE}
 
 ${BUILD_DIR}/%.o: ${SRC_DIR}/%.cpp
