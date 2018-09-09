@@ -1,7 +1,7 @@
-
 #include "ChatEngine.h"
 #include "impl/NcursesChatWindow.h"
 #include "impl/MockNetEngine.h"
+#include "impl/UnixSocketNetEngine.h"
 #include "log/Logger.h"
 
 int main() {
@@ -9,7 +9,8 @@ int main() {
     logger->log("Main: Starting up...");
 
     NcursesChatWindow chatWin;
-    MockNetEngine     netEng;
+    //MockNetEngine     netEngj
+    UnixSocketNetEngine netEng("3000");
 
     ChatEngine        chatEng(&chatWin, NULL, &netEng);
 

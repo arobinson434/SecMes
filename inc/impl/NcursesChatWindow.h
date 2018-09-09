@@ -11,6 +11,7 @@ class NcursesChatWindow: public ChatWindow {
        NcursesChatWindow();
        ~NcursesChatWindow();
 
+       void          clear();
        void          writeToConvo(std::string);
        std::string   readFromInput();
 

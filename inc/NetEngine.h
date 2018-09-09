@@ -12,6 +12,8 @@ class NetEngine {
          */
         virtual std::string  getMsg() = 0;
         virtual int          sendMsg(std::string) = 0;
+        virtual bool         connectRemote(std::string, std::string) = 0;
+        virtual void         closeRemote() = 0; //Close the remote connection
 };
 
 #endif

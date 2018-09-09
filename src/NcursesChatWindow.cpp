@@ -25,6 +25,11 @@ NcursesChatWindow::~NcursesChatWindow() {
     endwin();
 }
 
+void NcursesChatWindow::clear() {
+    wclear(mConvo);
+    wrefresh(mConvo);
+}
+
 void NcursesChatWindow::writeToConvo(std::string msg) {
     wprintw(mConvo, msg.c_str());
     wrefresh(mConvo);

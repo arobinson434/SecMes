@@ -8,3 +8,10 @@ std::string MockNetEngine::getMsg() {
 int MockNetEngine::sendMsg(std::string msg) {
     return 0;
 }
+
+bool MockNetEngine::connectRemote(std::string ip, std::string port) {
+    return true;
+}
+
+void MockNetEngine::closeRemote() {
+}

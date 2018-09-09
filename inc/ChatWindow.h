@@ -8,6 +8,7 @@ class ChatWindow {
        //ChatWindow();
        //~ChatWindow();
 
+       virtual void          clear() = 0;
        virtual void          writeToConvo(std::string) = 0;
        virtual std::string   readFromInput() = 0;
 };

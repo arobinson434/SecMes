@@ -2,6 +2,7 @@
 
 Logger::Logger() {
     logFile.open("log.txt", std::ios::app);
+    //freopen("log.txt", "a", stderr); //TODO: see how terrible this actually is
 }
 
 Logger::~Logger() {
