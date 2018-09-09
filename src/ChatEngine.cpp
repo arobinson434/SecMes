@@ -10,23 +10,30 @@ ChatEngine::ChatEngine(ChatWindow* _chatWin, SecEngine* _secEng, NetEngine* _net
     mChatWin = _chatWin;
     mSecEng  = _secEng;
     mNetEng  = _netEng;
+    mLogger  = Logger::getLogger();
 }
 
 ChatEngine::~ChatEngine() {
 }
 
 void ChatEngine::run() {
+    mLogger->log("ChatEngine: Starting ChatEngine...");
     mRunning = true;
     me = "userA";
 
     std::thread recMsgThread (&ChatEngine::recMsgLoop, this);
     std::thread inputThread  (&ChatEngine::inputLoop, this);
     
+    mLogger->log("ChatEngine: Running");
+
     inputThread.join();
     recMsgThread.join();
+
+    mLogger->log("ChatEngine: Stopped");
 }
 
 void ChatEngine::stop() {
+    mLogger->log("ChatEngine: Stopping...");
     mRunning = false;
 }
 

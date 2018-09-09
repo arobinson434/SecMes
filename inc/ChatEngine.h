@@ -5,6 +5,7 @@
 #include "ChatWindow.h"
 #include "SecEngine.h"
 #include "NetEngine.h"
+#include "log/Logger.h"
 
 class ChatEngine {
     public:
@@ -25,6 +26,7 @@ class ChatEngine {
         ChatWindow* mChatWin;
         SecEngine*  mSecEng;
         NetEngine*  mNetEng;
+        Logger*     mLogger;
 };
 
 #endif

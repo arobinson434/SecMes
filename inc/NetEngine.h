@@ -5,9 +5,11 @@
 
 class NetEngine {
     public:
-        //NetEngine();
-        //~NetEngine();
-
+        /* Note to the Implementor:
+         *  You MUST NOT block infinitely in getMsg().I would suggest not
+         *  waiting for message for longer than 1-2 seconds. I no message is
+         *  received, return "". 
+         */
         virtual std::string  getMsg() = 0;
         virtual int          sendMsg(std::string) = 0;
 };

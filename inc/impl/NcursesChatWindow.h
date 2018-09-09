@@ -4,6 +4,7 @@
 #include <ncurses.h>
 #include <string>
 #include "ChatWindow.h"
+#include "log/Logger.h"
 
 class NcursesChatWindow: public ChatWindow {
     public:
@@ -20,6 +21,7 @@ class NcursesChatWindow: public ChatWindow {
        WINDOW* mInputBox;
        WINDOW* mConvo;
        WINDOW* mInput;
+       Logger* mLogger;
 };
 
 #endif

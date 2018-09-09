@@ -13,15 +13,15 @@ OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRCS))
 
 all: ${BUILD_DIR} ${EXE}
 
-${BUILD_DIR}/%.o: ${SRC_DIR}/%.cpp
-	${CC} -c $< ${FLAGS} -o $@
-
 ${BUILD_DIR}:
 	mkdir build/
 
 ${EXE}: ${OBJS}
 	${CC} -o $@ $^ ${FLAGS}
 
+${BUILD_DIR}/%.o: ${SRC_DIR}/%.cpp
+	${CC} -c $< ${FLAGS} -o $@
+
 clean:
 	rm -rf build
-	rm ${EXE}
+	rm -f ${EXE}

@@ -5,6 +5,9 @@
 #define MAX_MSG_SIZE 1024
 
 NcursesChatWindow::NcursesChatWindow() {
+    mLogger = Logger::getLogger();
+    mLogger->log("ChatWin: Initializing NcursesChatWindow...");
+    
     initscr();
     cbreak();
     refresh();
@@ -18,6 +21,7 @@ NcursesChatWindow::NcursesChatWindow() {
 }
 
 NcursesChatWindow::~NcursesChatWindow() {
+    mLogger->log("ChatWin: Tearing Down NcursesChatWindow...");
     endwin();
 }
 
