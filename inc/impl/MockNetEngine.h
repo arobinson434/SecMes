@@ -12,6 +12,8 @@ class MockNetEngine: public NetEngine {
     public:
         std::string getMsg();
         int         sendMsg(std::string);
+        bool        connectRemote(std::string, std::string);
+        void        closeRemote();
 };
 
 #endif

@@ -14,24 +14,31 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "log/Logger.h"
 #include "NetEngine.h"
 
 class UnixSocketNetEngine: public NetEngine {
     public:
-        UnixSocketNetEngine(int port);
+        UnixSocketNetEngine(std::string);
         ~UnixSocketNetEngine();
 
         std::string getMsg();
         int         sendMsg(std::string);
+        bool        connectRemote(std::string, std::string);
+        void        closeRemote();
 
     private:
-        void* get_addr_ptr(sockaddr);
-        bool  create_listeners();
+        void* getAddrPtr(sockaddr*);
+        bool  createListeners();
+        void  log(std::string);
 
-        fd_set  m_master_fds;
-        int     m_fdmas;
-        int     m_listenfd;
-        int     m_remotefd;
+        fd_set      mMasterFDs;
+        fd_set      mListenFDs;
+        int         mFdmax;
+        int         mRemoteFD;
+        std::string mPort;
+        Logger*     mLogger;
+        bool        mAcceptConns;
 };
 
 #endif

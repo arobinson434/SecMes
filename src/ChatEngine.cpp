@@ -1,3 +1,4 @@
+#include <sstream>
 #include <string>
 #include <thread>
 #include "ChatEngine.h"
@@ -19,7 +20,7 @@ ChatEngine::~ChatEngine() {
 void ChatEngine::run() {
     mLogger->log("ChatEngine: Starting ChatEngine...");
     mRunning = true;
-    me = "userA";
+    me = "userA"; //TODO: This should be loaded from a config file
 
     std::thread recMsgThread (&ChatEngine::recMsgLoop, this);
     std::thread inputThread  (&ChatEngine::inputLoop, this);
@@ -51,18 +52,24 @@ void ChatEngine::recMsgLoop() {
 
 void ChatEngine::inputLoop() {
     std::string inputData;
+    int         sentBytes;
     while (mRunning) {
         inputData = mChatWin->readFromInput(); //blocking
         if (processCmd(inputData))
             continue;
-        inputData = "me: " + inputData + "\n";
+        inputData = me + ": " + inputData + "\n";
         if (mSecEng)
             inputData = mSecEng->encryptMsg(inputData);
-        mNetEng->sendMsg(inputData);
-        mChatWin->writeToConvo(inputData);
+        sentBytes = mNetEng->sendMsg(inputData);
+        if (sentBytes == inputData.length()) {
+            mChatWin->writeToConvo(inputData);
+        } else {
+            mChatWin->writeToConvo("System: Failed to send message.\n");
+        }
     }
 }
 
+//TODO: Move all of this out to different classes that register with the engine
 bool ChatEngine::processCmd(std::string cmd) {
     if (cmd == "/quit") {
         stop();
@@ -72,11 +79,43 @@ bool ChatEngine::processCmd(std::string cmd) {
     else if (cmd == "/help") {
         std::string output = "";
         output += "System: Current Commands\n";
+        output += "\tclear\tClear the screen\n";
+        output += "\tconnect <ip> <port>\tConnect to another chat instance\n";
+        output += "\tdisconnect\tClose the active connection\n";
         output += "\thelp\tThis help text\n";
         output += "\tquit\tClose the app\n";
         mChatWin->writeToConvo(output);
         return true;
     }
+    else if (cmd.find("/connect") == 0) {
+        std::stringstream ss(cmd);
+        std::string ip, port;
+        ss.ignore(10, ' ');
+        ss >> ip >> port;
+        
+        if ( ip.size() == 0 || port.size() == 0 ) {
+            mChatWin->writeToConvo("System: Failed to parse! please specify the IP and Port\n");
+        } else {
+            mChatWin->writeToConvo("System: Attempting to connect to "+ip+":"+port+" ...\n");
+            if (mNetEng->connectRemote(ip, port)) {
+                mChatWin->writeToConvo("System: Successfully connected\n");
+            } else {
+                mChatWin->writeToConvo("System: Failed to connected!\n");
+            }
+        }
+
+        return true;
+    }
+    else if (cmd == "/clear") {
+        mChatWin->clear();
+        return true;
+    }
+    else if (cmd == "/disconnect") {
+        mChatWin->writeToConvo("System: disconnected!\n");
+        mNetEng->closeRemote();
+        return true;
+    }
+
     return false;
 }
 
