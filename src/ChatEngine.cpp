@@ -2,9 +2,9 @@
 #include <string>
 #include <thread>
 #include "ChatEngine.h"
-#include "ChatWindow.h"
-#include "SecEngine.h"
-#include "NetEngine.h"
+#include "window/ChatWindow.h"
+#include "sec/SecEngine.h"
+#include "net/NetEngine.h"
 
 ChatEngine::ChatEngine(ChatWindow* _chatWin, SecEngine* _secEng, NetEngine* _netEng) {
     mRunning = false;

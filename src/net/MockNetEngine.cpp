@@ -1,4 +1,4 @@
-#include "impl/MockNetEngine.h"
+#include "net/MockNetEngine.h"
 
 std::string MockNetEngine::getMsg() {
     sleep(5);

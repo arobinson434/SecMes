@@ -1,7 +1,6 @@
 #include "ChatEngine.h"
-#include "impl/NcursesChatWindow.h"
-#include "impl/MockNetEngine.h"
-#include "impl/UnixSocketNetEngine.h"
+#include "window/NcursesChatWindow.h"
+#include "net/UnixSocketNetEngine.h"
 #include "log/Logger.h"
 
 int main() {

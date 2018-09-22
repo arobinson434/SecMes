@@ -1,6 +1,6 @@
 #include <ncurses.h>
 #include <string>
-#include "impl/NcursesChatWindow.h"
+#include "window/NcursesChatWindow.h"
 
 #define MAX_MSG_SIZE 1024
 

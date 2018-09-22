@@ -2,9 +2,9 @@
 #define CHAT_ENGINE_H
 
 #include <string>
-#include "ChatWindow.h"
-#include "SecEngine.h"
-#include "NetEngine.h"
+#include "window/ChatWindow.h"
+#include "sec/SecEngine.h"
+#include "net/NetEngine.h"
 #include "log/Logger.h"
 
 class ChatEngine {
