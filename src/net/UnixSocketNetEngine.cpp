@@ -1,19 +1,31 @@
-#include <string.h>
-#include <sys/time.h>
 #include "net/UnixSocketNetEngine.h"
+#include <cstring>
 
 #define BACKLOG 10
 #define MAX_BUF 1024
 
-UnixSocketNetEngine::UnixSocketNetEngine(std::string port) {
-    FD_ZERO(&mMasterFDs);
+UnixSocketNetEngine::UnixSocketNetEngine() {
     FD_ZERO(&mListenFDs);
 
-    mFdmax       = mRemoteFD = 0;
+    mListenMax   = mRemoteFD = 0;
     mLogger      = Logger::getLogger();
-    mPort        = port;
-    mAcceptConns = true;
+    mIsConnected = false;
+    
+    mTv.tv_sec = 0;
+    mTv.tv_usec = 500 * 1000; // 500ms
+}
 
+UnixSocketNetEngine::~UnixSocketNetEngine() {
+    closeRemote();
+    for ( int fd = 0; fd < mListenMax; fd++ ) {
+        if ( FD_ISSET(fd, &mListenFDs) ) {
+            close(fd);
+        }
+    }
+}
+
+void UnixSocketNetEngine::initialize(std::string port) {
+    mPort = port;
     log("Starting the Unix Socket Net Engine...");
     if (createListeners())
         log("Successfully started Listener");
@@ -21,77 +33,73 @@ UnixSocketNetEngine::UnixSocketNetEngine(std::string port) {
         log("FAILED TO START LISTENER!");
 }
 
-UnixSocketNetEngine::~UnixSocketNetEngine() {
-    closeRemote();
-    for ( int fd = 0; fd < mFdmax; fd++ ) {
-        if ( FD_ISSET(fd, &mMasterFDs) ) {
-            close(fd);
-        }
-    }
-}
-
-std::string UnixSocketNetEngine::getMsg() {
+std::string UnixSocketNetEngine::processConnection() {
+    int              tmpFd;
     char             ipstr[INET6_ADDRSTRLEN];
-    char             buff[MAX_BUF];
     sockaddr_storage remoteAddr;
     socklen_t        addrSize  = sizeof remoteAddr;
-    fd_set           readFds = mMasterFDs;
-    std::string      retStr   = "";
-    int              tmpFd;
-    timeval          tv;
+    fd_set           readFds   = mListenFDs;
+    std::string      retStr    = "";
     
-    tv.tv_sec = 2;
-    tv.tv_usec = 0;
-    memset(buff, 0, MAX_BUF);
-    
-    if ( select(mFdmax, &readFds, NULL, NULL, &tv) == -1 ) {
+    if ( mIsConnected ) {
+        log("Currently connected, won't process new connections!");
+        return retStr;
+    }
+
+    if ( select(mListenMax, &readFds, NULL, NULL, &mTv) == -1 ) {
         log("Failed select!");
         perror("Select");
         return retStr;
     }
 
-    for ( int fd = 0; fd < mFdmax; fd++ ) {
+    for ( int fd = 0; fd < mListenMax; fd++ ) {
         if ( FD_ISSET(fd, &readFds) ) {
-            if ( FD_ISSET(fd, &mListenFDs) ) {
-                tmpFd = accept(fd, (sockaddr*)&remoteAddr, &addrSize);
-                if (tmpFd == -1) {
-                    log("Problem accepting connection!");
-                    perror("Accept");
-                    continue;
-                }
-
-                inet_ntop(remoteAddr.ss_family,
-                          getAddrPtr((sockaddr *)&remoteAddr),
-                          ipstr,
-                          sizeof ipstr);
-
-                if (mAcceptConns) {
-                    mRemoteFD = tmpFd;
-                    log("Accepted Connection from " + std::string(ipstr));
-                    retStr += "System: Accepted Connection from " + std::string(ipstr) + "\n";
-                    FD_SET(mRemoteFD, &mMasterFDs);
-                    mFdmax = mRemoteFD + 1;
-                } else {
-                    close(tmpFd);
-                    log("Rejected Connection from " + std::string(ipstr));
-                }
-            } else {
-                // Process incoming messages
-                int recBytes = recv(fd, buff, MAX_BUF, 0); 
-               
-                if (recBytes < 0) {
-                    log("Error processing receive!\n");
-                    perror("recv");
-                } else if (recBytes == 0) {
-                    log("Remote end disconnected\n");
-                    retStr += "System: Remote end disconnected\n";
-                    closeRemote();
-                } else {
-                    // We got something!
-                    retStr += std::string(buff);
-                }
+            tmpFd = accept(fd, (sockaddr*)&remoteAddr, &addrSize);
+            if (tmpFd == -1) {
+                log("Problem accepting connection!");
+                perror("Accept");
+                continue;
             }
+
+            inet_ntop(remoteAddr.ss_family,
+                      getAddrPtr((sockaddr *)&remoteAddr),
+                      ipstr,
+                      sizeof ipstr);
+
+            mRemoteFD    = tmpFd;
+            mIsConnected = true;
+            setsockopt(mRemoteFD, SOL_SOCKET, SO_RCVTIMEO, (const char*)&mTv, sizeof mTv);
+
+            log("Accepted Connection from " + std::string(ipstr));
+            retStr += "System: Accepted Connection from " + std::string(ipstr) + "\n";
+            break;
         }
+    }
+
+    return retStr;
+}
+
+std::string UnixSocketNetEngine::getMsg() {
+    std::string retStr = "";
+    char        buff[MAX_BUF];
+    memset(buff, 0, MAX_BUF);
+
+    if ( !mIsConnected )
+        return retStr;
+
+    int recBytes = recv(mRemoteFD, buff, MAX_BUF, 0); 
+   
+    if ( recBytes < 0 ) {
+        if ( !( errno == EAGAIN || errno == EWOULDBLOCK ) ) {
+            log("Error processing receive!\n");
+            perror("recv");
+        } // Else, we just didn't get anything
+    } else if (recBytes == 0) {
+        log("Remote end disconnected\n");
+        retStr += "System: Remote end disconnected\n";
+        closeRemote();
+    } else {
+        retStr += std::string(buff);
     }
 
     return retStr;
@@ -145,10 +153,10 @@ bool UnixSocketNetEngine::connectRemote(std::string ip, std::string port) {
     }
 
     freeaddrinfo(remote);
-    mRemoteFD       = sockfd;
-    mFdmax          = mRemoteFD + 1;
-    mAcceptConns    = false;
-    FD_SET(mRemoteFD, &mMasterFDs);
+
+    mRemoteFD    = sockfd;
+    mIsConnected = true;
+    setsockopt(mRemoteFD, SOL_SOCKET, SO_RCVTIMEO, (const char*)&mTv, sizeof mTv);
 
     log("Successfully connected to "+ip+"\n");
 
@@ -157,8 +165,7 @@ bool UnixSocketNetEngine::connectRemote(std::string ip, std::string port) {
 
 void UnixSocketNetEngine::closeRemote() {
     close(mRemoteFD);
-    FD_CLR(mRemoteFD, &mMasterFDs);
-    mAcceptConns = true;
+    mIsConnected = true;
     mRemoteFD    = 0;
 }
 
@@ -218,14 +225,15 @@ bool UnixSocketNetEngine::createListeners() {
             continue;
         }
 
-        FD_SET(sockfd, &mMasterFDs);
+        log("Listening on: " + std::string(ipstr));
+
         FD_SET(sockfd, &mListenFDs);
-        mFdmax = sockfd+1;
+        mListenMax = sockfd+1;
     }
 
     freeaddrinfo(res);
 
-    if ( mFdmax == 0 ) {
+    if ( mListenMax == 0 ) {
         log("Failed listen on any socket!");
         return false;
     }
@@ -235,4 +243,8 @@ bool UnixSocketNetEngine::createListeners() {
 
 void UnixSocketNetEngine::log(std::string msg) {
     mLogger->log("UnixSockNetEng: "+msg);
+}
+
+bool UnixSocketNetEngine::isConnected() {
+    return mIsConnected;
 }

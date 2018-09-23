@@ -9,9 +9,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
-#include <sys/wait.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "log/Logger.h"
@@ -19,26 +20,29 @@
 
 class UnixSocketNetEngine: public NetEngine {
     public:
-        UnixSocketNetEngine(std::string);
+        UnixSocketNetEngine();
         ~UnixSocketNetEngine();
 
         std::string getMsg();
+        std::string processConnection();
         int         sendMsg(std::string);
         bool        connectRemote(std::string, std::string);
         void        closeRemote();
+        void        initialize(std::string);
+        bool        isConnected();
 
     private:
         void* getAddrPtr(sockaddr*);
         bool  createListeners();
         void  log(std::string);
 
-        fd_set      mMasterFDs;
         fd_set      mListenFDs;
-        int         mFdmax;
+        int         mListenMax;
         int         mRemoteFD;
+        bool        mIsConnected;
         std::string mPort;
         Logger*     mLogger;
-        bool        mAcceptConns;
+        timeval     mTv;
 };
 
 #endif

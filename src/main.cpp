@@ -4,14 +4,12 @@
 #include "log/Logger.h"
 
 int main() {
-    Logger*           logger = Logger::getLogger();
+    Logger* logger = Logger::getLogger();
     logger->log("Main: Starting up...");
 
-    NcursesChatWindow chatWin;
-    //MockNetEngine     netEngj
-    UnixSocketNetEngine netEng("3000");
-
-    ChatEngine        chatEng(&chatWin, NULL, &netEng);
+    NcursesChatWindow   chatWin;
+    UnixSocketNetEngine netEng;
+    ChatEngine          chatEng(&chatWin, NULL, &netEng);
 
     chatEng.run();
 

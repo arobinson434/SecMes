@@ -10,10 +10,17 @@
  */
 class MockNetEngine: public NetEngine {
     public:
+        MockNetEngine();
         std::string getMsg();
+        std::string processConnection();
         int         sendMsg(std::string);
         bool        connectRemote(std::string, std::string);
         void        closeRemote();
+        void        initialize(std::string);
+        bool        isConnected();
+
+    private:
+        bool mIsConnected;
 };
 
 #endif
