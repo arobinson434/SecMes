@@ -26,10 +26,11 @@ void AbstractChatState::log(std::string msg) {
 
 bool AbstractChatState::processCmd(std::string cmd) {
     if (cmd == "/clear") {
-        clear();
+        clearConvo();
         return true;
     }
     else if (cmd == "/help") {
+        mLogger->log("About to print: "+help());
         writeToConvo(help());
         return true;
     }
@@ -44,10 +45,6 @@ bool AbstractChatState::processCmd(std::string cmd) {
     return processStateCmd(cmd);
 }
 
-void AbstractChatState::setName(std::string name) {
-    mMachine->mName = name;
-}
-
 std::string AbstractChatState::stateHelp() {
     return "";
 }
@@ -57,6 +54,10 @@ bool AbstractChatState::processStateCmd(std::string cmd) {
 }
 
 // Start of pass through functions
+void AbstractChatState::setName(std::string name) {
+    mMachine->mName = name;
+}
+
 std::string AbstractChatState::getName() {
     return mMachine->mName;
 }
@@ -67,6 +68,14 @@ void AbstractChatState::setRunning(bool val) {
 
 bool AbstractChatState::isRunning() {
     return mMachine->mRunning;
+}
+
+bool AbstractChatState::hasPendingMsg() {
+    return mMachine->mNetEng->hasPendingMsg();
+}
+
+bool AbstractChatState::isConnected() {
+    return mMachine->mNetEng->isConnected();
 }
 
 std::string AbstractChatState::getMsg() {
@@ -81,23 +90,27 @@ bool AbstractChatState::connectRemote(std::string addr, std::string port) {
     return mMachine->mNetEng->connectRemote(addr, port);
 }
 
-void AbstractChatState::closeRemote() {
-    mMachine->mNetEng->closeRemote();
+void AbstractChatState::disconnect() {
+    mMachine->mNetEng->disconnect();
 }
 
 void AbstractChatState::initialize(std::string port) {
     mMachine->mNetEng->initialize(port);
 }
 
-std::string AbstractChatState::readFromInput() {
-    return mMachine->mChatWin->readFromInput();
+bool AbstractChatState::hasPendingInput() {
+    mMachine->mChatWin->hasPendingInput();
+}
+
+std::string AbstractChatState::getUserInput() {
+    return mMachine->mChatWin->getUserInput();
 }
 
 void AbstractChatState::writeToConvo(std::string msg) {
     mMachine->mChatWin->writeToConvo(msg);
 }
 
-void AbstractChatState::clear() {
-    mMachine->mChatWin->clear();
+void AbstractChatState::clearConvo() {
+    mMachine->mChatWin->clearConvo();
 }
 

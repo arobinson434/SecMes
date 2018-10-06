@@ -16,7 +16,10 @@ UnixSocketNetEngine::UnixSocketNetEngine() {
 }
 
 UnixSocketNetEngine::~UnixSocketNetEngine() {
-    closeRemote();
+    mRunning = false;
+    mRcvThread->join();
+
+    disconnect();
     for ( int fd = 0; fd < mListenMax; fd++ ) {
         if ( FD_ISSET(fd, &mListenFDs) ) {
             close(fd);
@@ -27,29 +30,35 @@ UnixSocketNetEngine::~UnixSocketNetEngine() {
 void UnixSocketNetEngine::initialize(std::string port) {
     mPort = port;
     log("Starting the Unix Socket Net Engine...");
-    if (createListeners())
+    if (createListeners()) {
         log("Successfully started Listener");
-    else
+        mRunning   = true;
+        mRcvThread = new std::thread(&UnixSocketNetEngine::rcvLoop, this);
+    } else {
         log("FAILED TO START LISTENER!");
+    }
 }
 
-std::string UnixSocketNetEngine::processConnection() {
+void UnixSocketNetEngine::rcvLoop() {
+    while (mRunning) {
+        if (mIsConnected) {
+            rcvMsg();
+        } else {
+            rcvConnection();
+        }
+    }
+}
+
+void UnixSocketNetEngine::rcvConnection() {
     int              tmpFd;
     char             ipstr[INET6_ADDRSTRLEN];
     sockaddr_storage remoteAddr;
     socklen_t        addrSize  = sizeof remoteAddr;
     fd_set           readFds   = mListenFDs;
-    std::string      retStr    = "";
-    
-    if ( mIsConnected ) {
-        log("Currently connected, won't process new connections!");
-        return retStr;
-    }
 
     if ( select(mListenMax, &readFds, NULL, NULL, &mTv) == -1 ) {
         log("Failed select!");
         perror("Select");
-        return retStr;
     }
 
     for ( int fd = 0; fd < mListenMax; fd++ ) {
@@ -71,38 +80,36 @@ std::string UnixSocketNetEngine::processConnection() {
             setsockopt(mRemoteFD, SOL_SOCKET, SO_RCVTIMEO, (const char*)&mTv, sizeof mTv);
 
             log("Accepted Connection from " + std::string(ipstr));
-            retStr += "System: Accepted Connection from " + std::string(ipstr) + "\n";
             break;
         }
     }
-
-    return retStr;
 }
 
-std::string UnixSocketNetEngine::getMsg() {
-    std::string retStr = "";
-    char        buff[MAX_BUF];
+void UnixSocketNetEngine::rcvMsg() {
+    fd_set remoteSet;
+    char   buff[MAX_BUF];
+
     memset(buff, 0, MAX_BUF);
+    FD_ZERO(&remoteSet);
+    FD_SET(mRemoteFD, &remoteSet);
 
-    if ( !mIsConnected )
-        return retStr;
-
-    int recBytes = recv(mRemoteFD, buff, MAX_BUF, 0); 
-   
-    if ( recBytes < 0 ) {
-        if ( !( errno == EAGAIN || errno == EWOULDBLOCK ) ) {
-            log("Error processing receive!\n");
-            perror("recv");
-        } // Else, we just didn't get anything
-    } else if (recBytes == 0) {
-        log("Remote end disconnected\n");
-        retStr += "System: Remote end disconnected\n";
-        closeRemote();
-    } else {
-        retStr += std::string(buff);
+    if ( select(mListenMax, &remoteSet, NULL, NULL, &mTv) == -1 ) {
+        log("Failed select!");
+        perror("Select");
     }
 
-    return retStr;
+    for ( int fd = 0; fd < mListenMax; fd++ ) {
+        if ( FD_ISSET(fd, &remoteSet) ) {
+            int recBytes = recv(mRemoteFD, buff, MAX_BUF, 0); 
+            if (recBytes == 0) {
+                log("Remote end disconnected\n");
+                disconnect();
+            } else {
+                mRcvQueue.push(std::string(buff));
+            }
+            break;
+        }
+    }
 }
 
 int UnixSocketNetEngine::sendMsg(std::string msg) {
@@ -163,10 +170,20 @@ bool UnixSocketNetEngine::connectRemote(std::string ip, std::string port) {
     return true;
 }
 
-void UnixSocketNetEngine::closeRemote() {
+void UnixSocketNetEngine::disconnect() {
     close(mRemoteFD);
     mIsConnected = true;
     mRemoteFD    = 0;
+}
+
+bool UnixSocketNetEngine::hasPendingMsg() {
+    return !(mRcvQueue.size() == 0);
+}
+
+std::string UnixSocketNetEngine::getMsg() {
+    std::string retVal = mRcvQueue.front();
+    mRcvQueue.pop();
+    return retVal;
 }
 
 void* UnixSocketNetEngine::getAddrPtr(sockaddr* saddr) {
@@ -203,14 +220,15 @@ bool UnixSocketNetEngine::createListeners() {
             continue;
         }
 
-        char yes = 1;
+        int yes = 1;
         // Don't let AF_INET6 sockets dual stack!
         if ( p->ai_family == AF_INET6 ) {
-            setsockopt(sockfd, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(char));
+            log("\tSetting sock opt!");
+            setsockopt(sockfd, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(yes));
         }
     
         // Always bind!
-        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(char));
+        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
         if ( bind(sockfd, p->ai_addr, p->ai_addrlen) == -1 ) {
             close(sockfd);

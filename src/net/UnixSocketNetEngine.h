@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <queue>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <thread>
 #include <unistd.h>
 
 #include "log/Logger.h"
@@ -23,26 +25,33 @@ class UnixSocketNetEngine: public NetEngine {
         UnixSocketNetEngine();
         ~UnixSocketNetEngine();
 
+        bool        hasPendingMsg();
         std::string getMsg();
-        std::string processConnection();
         int         sendMsg(std::string);
         bool        connectRemote(std::string, std::string);
-        void        closeRemote();
-        void        initialize(std::string);
+        void        disconnect();
         bool        isConnected();
+        void        initialize(std::string);
 
     private:
-        void* getAddrPtr(sockaddr*);
-        bool  createListeners();
-        void  log(std::string);
+        void*       getAddrPtr(sockaddr*);
+        bool        createListeners();
+        void        log(std::string);
+        void        rcvLoop();
+        void        rcvConnection();
+        void        rcvMsg();
 
         fd_set      mListenFDs;
         int         mListenMax;
         int         mRemoteFD;
         bool        mIsConnected;
+        bool        mRunning;
         std::string mPort;
         Logger*     mLogger;
         timeval     mTv;
+
+        std::thread*            mRcvThread;
+        std::queue<std::string> mRcvQueue;
 };
 
 #endif

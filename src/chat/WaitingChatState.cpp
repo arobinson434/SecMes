@@ -4,17 +4,18 @@ WaitingChatState::WaitingChatState(ChatMachine* machine):
     AbstractChatState(machine) {
     mModeName  = "WaitingState";
     mNextState = 0;
-    mAccepted  = false; //TODO: remove this
 }
 
 AbstractChatState* WaitingChatState::run() {
     log("Waiting for connection instructions\n");
-    std::thread connectionThread (&WaitingChatState::connectLoop, this);
-    std::thread inputThread      (&WaitingChatState::inputLoop, this);
 
-    connectionThread.join();
-    stopInputWait();
-    inputThread.join();
+    //TODO: don't leave this busy wait in
+    while( !isConnected() ) {
+        if ( hasPendingInput() ) {
+            std::string msg = getUserInput();
+            processCmd( msg );
+        }
+    }
 
     return mNextState;
 }

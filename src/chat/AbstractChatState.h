@@ -2,6 +2,7 @@
 #define ABS_CHAT_STATE_H
 
 #include <string>
+#include <sstream>
 
 class ChatMachine;
 class Logger;
@@ -30,17 +31,19 @@ class AbstractChatState {
         bool        isRunning();
 
         // NetEngine Accessors
+        bool        hasPendingMsg();
+        bool        isConnected();
         std::string getMsg();
         int         sendMsg(std::string);
         bool        connectRemote(std::string, std::string);
-        void        closeRemote();
+        void        disconnect();
         void        initialize(std::string);
-        bool        isConnected();
 
         // Window Accessors
-        std::string readFromInput();
+        bool        hasPendingInput();
+        std::string getUserInput();
         void        writeToConvo(std::string);
-        void        clear();
+        void        clearConvo();
 };
 
 #endif

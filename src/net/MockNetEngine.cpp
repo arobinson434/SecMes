@@ -1,7 +1,7 @@
 #include "net/MockNetEngine.h"
 
-std::string MockNetEngine::processConnection() {
-    return ""; // We don't spoof incoming connections
+bool MockNetEngine::hasPendingMsg() {
+    return true;
 }
 
 std::string MockNetEngine::getMsg() {
@@ -19,7 +19,7 @@ bool MockNetEngine::connectRemote(std::string ip, std::string port) {
     return true;
 }
 
-void MockNetEngine::closeRemote() {
+void MockNetEngine::disconnect() {
     mIsConnected = false;
 }
 

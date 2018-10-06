@@ -1,4 +1,5 @@
 #include "chat/ConfigChatState.h"
+#include "chat/WaitingChatState.h"
 
 ConfigChatState::ConfigChatState(ChatMachine* machine):
     AbstractChatState(machine) {
@@ -17,9 +18,9 @@ AbstractChatState* ConfigChatState::run() {
     //      b.) write it to the config
     //      c.) then move on
     // Hard code for nowa
-    log("Configuring fixed settings\n")
+    log("Configuring fixed settings\n");
     setName("userA");
     initialize("3000");
     //return new WaitingChatState(mMachine);
-    return new ConfigChatState(mMachine);
+    return new WaitingChatState(mMachine);
 }
