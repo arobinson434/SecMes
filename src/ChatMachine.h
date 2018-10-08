@@ -20,6 +20,7 @@ class ChatMachine {
     private:
         AbstractChatState* mState;
         std::string        mName;
+        std::string        mPeerName;
         ChatWindow*        mChatWin;
         SecEngine*         mSecEng;
         NetEngine*         mNetEng;

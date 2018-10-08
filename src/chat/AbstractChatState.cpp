@@ -30,7 +30,6 @@ bool AbstractChatState::processCmd(std::string cmd) {
         return true;
     }
     else if (cmd == "/help") {
-        mLogger->log("About to print: "+help());
         writeToConvo(help());
         return true;
     }
@@ -60,6 +59,14 @@ void AbstractChatState::setName(std::string name) {
 
 std::string AbstractChatState::getName() {
     return mMachine->mName;
+}
+
+void AbstractChatState::setPeerName(std::string name) {
+    mMachine->mPeerName = name;
+}
+
+std::string AbstractChatState::getPeerName() {
+    return mMachine->mPeerName;
 }
 
 void AbstractChatState::setRunning(bool val) {

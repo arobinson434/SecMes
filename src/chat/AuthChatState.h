@@ -1,11 +1,11 @@
-#ifndef WAITING_CHAT_STATE_H
-#define WAITING_CHAT_STATE_H
+#ifndef AUTH_CHAT_STATE_H
+#define AUTH_CHAT_STATE_H
 
 #include "chat/AbstractChatState.h"
 
-class WaitingChatState: public AbstractChatState {
+class AuthChatState: public AbstractChatState {
     public:
-        WaitingChatState(ChatMachine*);
+        AuthChatState(ChatMachine*);
 
         AbstractChatState* run();
         std::string        stateHelp();
@@ -13,6 +13,9 @@ class WaitingChatState: public AbstractChatState {
 
     private:
         AbstractChatState* mNextState;
+        bool               mWaitingOnResponse;
+
+        bool getAuthInfo();
 };
 
 #endif

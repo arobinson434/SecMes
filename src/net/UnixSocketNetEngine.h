@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <mutex>
 #include <thread>
 #include <unistd.h>
 
@@ -52,6 +53,7 @@ class UnixSocketNetEngine: public NetEngine {
 
         std::thread*            mRcvThread;
         std::queue<std::string> mRcvQueue;
+        std::recursive_mutex    mRemoteFdMutex;
 };
 
 #endif

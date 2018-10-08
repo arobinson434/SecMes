@@ -1,4 +1,7 @@
+#include "chat/AuthChatState.h"
 #include "chat/WaitingChatState.h"
+
+#include <unistd.h>
 
 WaitingChatState::WaitingChatState(ChatMachine* machine):
     AbstractChatState(machine) {
@@ -7,14 +10,18 @@ WaitingChatState::WaitingChatState(ChatMachine* machine):
 }
 
 AbstractChatState* WaitingChatState::run() {
-    log("Waiting for connection instructions\n");
+    log("Waiting for connection event");
 
-    //TODO: don't leave this busy wait in
-    while( !isConnected() ) {
+    while( !isConnected() && isRunning() ) {
         if ( hasPendingInput() ) {
             std::string msg = getUserInput();
             processCmd( msg );
         }
+    }
+
+    if ( isConnected() ) {
+        log("Connected!");
+        mNextState = new AuthChatState(mMachine);
     }
 
     return mNextState;
@@ -23,9 +30,7 @@ AbstractChatState* WaitingChatState::run() {
 std::string WaitingChatState::stateHelp() {
     std::string helpStr;
     helpStr += "\tWaiting State Commands:\n";
-    helpStr += "\t\t* clear - Clear the screen\n";
-    helpStr += "\t\t* help  - This help prompt\n";
-    helpStr += "\t\t* quit  - Quit the program\n";
+    helpStr += "\t\t* connect <ip> <port> - Connect to a remote host\n";
     helpStr += "\n";
     return helpStr;
 }
@@ -40,11 +45,14 @@ bool WaitingChatState::processStateCmd(std::string cmd) {
         if ( ip.size() == 0 || port.size() == 0 ) {
             writeToConvo("System: Failed to parse! please specify the IP and Port\n");
         } else {
+            log("Attempting to connect to "+ip+":"+port+" ...");
             writeToConvo("System: Attempting to connect to "+ip+":"+port+" ...\n");
             if (connectRemote(ip, port)) {
+                log("Successfully connected");
                 writeToConvo("System: Successfully connected\n");
             } else {
-                writeToConvo("System: Failed to connected!\n");
+                log("Failed to connect");
+                writeToConvo("System: Failed to connect!\n");
             }
         }
         return true;

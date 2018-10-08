@@ -9,8 +9,8 @@ int main() {
     logger->log("Main: Starting up...");
 
     NcursesChatWindow   chatWin;
-    //UnixSocketNetEngine netEng;
-    MockNetEngine netEng;
+    UnixSocketNetEngine netEng;
+    //MockNetEngine netEng;
     ChatMachine         chatMach(&chatWin, NULL, &netEng);
 
     chatMach.run();

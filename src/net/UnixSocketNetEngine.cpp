@@ -1,5 +1,6 @@
 #include "net/UnixSocketNetEngine.h"
 #include <cstring>
+#include <sstream>
 
 #define BACKLOG 10
 #define MAX_BUF 1024
@@ -57,8 +58,8 @@ void UnixSocketNetEngine::rcvConnection() {
     fd_set           readFds   = mListenFDs;
 
     if ( select(mListenMax, &readFds, NULL, NULL, &mTv) == -1 ) {
-        log("Failed select!");
-        perror("Select");
+        log("Failed select in rcvConn()");
+        perror("RcvCon Select");
     }
 
     for ( int fd = 0; fd < mListenMax; fd++ ) {
@@ -86,6 +87,8 @@ void UnixSocketNetEngine::rcvConnection() {
 }
 
 void UnixSocketNetEngine::rcvMsg() {
+    mRemoteFdMutex.lock();
+
     fd_set remoteSet;
     char   buff[MAX_BUF];
 
@@ -93,23 +96,22 @@ void UnixSocketNetEngine::rcvMsg() {
     FD_ZERO(&remoteSet);
     FD_SET(mRemoteFD, &remoteSet);
 
-    if ( select(mListenMax, &remoteSet, NULL, NULL, &mTv) == -1 ) {
-        log("Failed select!");
-        perror("Select");
+    if ( select(mRemoteFD+1, &remoteSet, NULL, NULL, &mTv) == -1 ) {
+        log("Failed select in rcvMsg()");
+        perror("RcvMsg Select");
     }
 
-    for ( int fd = 0; fd < mListenMax; fd++ ) {
-        if ( FD_ISSET(fd, &remoteSet) ) {
-            int recBytes = recv(mRemoteFD, buff, MAX_BUF, 0); 
-            if (recBytes == 0) {
-                log("Remote end disconnected\n");
-                disconnect();
-            } else {
-                mRcvQueue.push(std::string(buff));
-            }
-            break;
+    if ( FD_ISSET(mRemoteFD, &remoteSet) ) {
+        int recBytes = recv(mRemoteFD, buff, MAX_BUF, 0); 
+        if (recBytes == 0) {
+            log("Remote end disconnected");
+            disconnect();
+        } else {
+            mRcvQueue.push(std::string(buff));
         }
     }
+
+    mRemoteFdMutex.unlock();
 }
 
 int UnixSocketNetEngine::sendMsg(std::string msg) {
@@ -117,7 +119,7 @@ int UnixSocketNetEngine::sendMsg(std::string msg) {
 
     sentBytes = send(mRemoteFD, msg.c_str(), msg.length(), 0);
     if (sentBytes == -1) {
-        log("Failed to send message\n");
+        log("Failed to send message");
         perror("Send");
     }
 
@@ -133,21 +135,21 @@ bool UnixSocketNetEngine::connectRemote(std::string ip, std::string port) {
     hints.ai_socktype = SOCK_STREAM;
 
     if ( getaddrinfo(ip.c_str(), port.c_str(), &hints, &remote) != 0 ) {
-        log("Error getting address info for "+ip+"!\n");
-        log(std::string("\tgetaddrinfo error: ")+gai_strerror(rv)+"\n");
+        log("Error getting address info for "+ip);
+        log(std::string("\tgetaddrinfo error: ")+gai_strerror(rv));
         return false;
     }
 
     for (p = remote; p != NULL; p = p->ai_next) {
         sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
         if ( sockfd == -1 ) {
-            log("Failed to get socket\n");
+            log("Failed to get socket");
             perror("Socket");
             continue;
         }
         
         if ( connect(sockfd, p->ai_addr, p->ai_addrlen) == -1 ) {
-            log("Failed to connect to "+ip+"\n");
+            log("Failed to connect to "+ip);
             perror("Connect");
             continue;
         }
@@ -155,7 +157,7 @@ bool UnixSocketNetEngine::connectRemote(std::string ip, std::string port) {
     }
 
     if (p == NULL) {
-        log("Failed to connect to "+ip+"\n");
+        log("Failed to connect to "+ip);
         return false;
     }
 
@@ -164,16 +166,22 @@ bool UnixSocketNetEngine::connectRemote(std::string ip, std::string port) {
     mRemoteFD    = sockfd;
     mIsConnected = true;
     setsockopt(mRemoteFD, SOL_SOCKET, SO_RCVTIMEO, (const char*)&mTv, sizeof mTv);
-
-    log("Successfully connected to "+ip+"\n");
+    
+    log("Successfully connected to "+ip);
 
     return true;
 }
 
 void UnixSocketNetEngine::disconnect() {
-    close(mRemoteFD);
-    mIsConnected = true;
+    mRemoteFdMutex.lock();
+
+    log("Disconnecting");
+    if (mRemoteFD)
+        close(mRemoteFD);
+    mIsConnected = false;
     mRemoteFD    = 0;
+
+    mRemoteFdMutex.unlock();
 }
 
 bool UnixSocketNetEngine::hasPendingMsg() {

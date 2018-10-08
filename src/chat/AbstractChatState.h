@@ -27,6 +27,8 @@ class AbstractChatState {
         // Machine Accessor
         void        setName(std::string);
         std::string getName();
+        void        setPeerName(std::string);
+        std::string getPeerName();
         void        setRunning(bool);
         bool        isRunning();
 
