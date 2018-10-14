@@ -40,11 +40,10 @@ void UnixSocketNetEngine::initialize(std::string port) {
 
 void UnixSocketNetEngine::rcvLoop() {
     while (mRunning) {
-        if (mIsConnected) {
+        if (mIsConnected)
             rcvMsg();
-        } else {
+        else
             rcvConnection();
-        }
 
         // We won't yield until we 'select' again, and at that point 
         //  we will have the mutex. Lets yield to see if any other threads
@@ -54,6 +53,8 @@ void UnixSocketNetEngine::rcvLoop() {
 }
 
 void UnixSocketNetEngine::rcvConnection() {
+    std::lock_guard<std::recursive_mutex> lock(mRemoteFdMutex);
+
     int              tmpFd;
     char             ipstr[INET6_ADDRSTRLEN];
     sockaddr_storage remoteAddr;
@@ -96,7 +97,7 @@ void UnixSocketNetEngine::rcvConnection() {
 }
 
 void UnixSocketNetEngine::rcvMsg() {
-    mRemoteFdMutex.lock();
+    std::lock_guard<std::recursive_mutex> lock(mRemoteFdMutex);
 
     fd_set  remoteSet;
     char    buff[MAX_BUF];
@@ -122,11 +123,11 @@ void UnixSocketNetEngine::rcvMsg() {
             mRcvQueue.push(std::string(buff));
         }
     }
-
-    mRemoteFdMutex.unlock();
 }
 
 int UnixSocketNetEngine::sendMsg(std::string msg) {
+    std::lock_guard<std::recursive_mutex> lock(mRemoteFdMutex);
+
     int sentBytes = 0;
 
     sentBytes = send(mRemoteFD, msg.c_str(), msg.length(), 0);
@@ -139,6 +140,8 @@ int UnixSocketNetEngine::sendMsg(std::string msg) {
 }
 
 bool UnixSocketNetEngine::connectRemote(std::string ip, std::string port) {
+    std::lock_guard<std::recursive_mutex> lock(mRemoteFdMutex);
+
     int sockfd, rv;
     addrinfo hints, *remote, *p;
 
@@ -189,15 +192,13 @@ bool UnixSocketNetEngine::connectRemote(std::string ip, std::string port) {
 }
 
 void UnixSocketNetEngine::disconnect() {
-    mRemoteFdMutex.lock();
+    std::lock_guard<std::recursive_mutex> lock(mRemoteFdMutex);
 
     log("Disconnecting");
     if (mRemoteFD)
         close(mRemoteFD);
     mIsConnected = false;
     mRemoteFD    = 0;
-
-    mRemoteFdMutex.unlock();
 }
 
 bool UnixSocketNetEngine::hasPendingMsg() {
