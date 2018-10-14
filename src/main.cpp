@@ -1,19 +1,19 @@
-#include "ChatEngine.h"
+#include "ChatMachine.h"
 #include "window/NcursesChatWindow.h"
 #include "net/UnixSocketNetEngine.h"
+#include "net/MockNetEngine.h"
 #include "log/Logger.h"
 
 int main() {
-    Logger*           logger = Logger::getLogger();
+    Logger* logger = Logger::getLogger();
     logger->log("Main: Starting up...");
 
-    NcursesChatWindow chatWin;
-    //MockNetEngine     netEngj
-    UnixSocketNetEngine netEng("3000");
+    NcursesChatWindow   chatWin;
+    UnixSocketNetEngine netEng;
+    //MockNetEngine netEng;
+    ChatMachine         chatMach(&chatWin, NULL, &netEng);
 
-    ChatEngine        chatEng(&chatWin, NULL, &netEng);
-
-    chatEng.run();
+    chatMach.run();
 
     logger->log("Main: Exiting...");
     return 0;
