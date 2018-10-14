@@ -37,6 +37,7 @@ AbstractChatState* AuthChatState::run() {
                 if ( processCmd( msg ) && !mWaitingOnResponse )
                     return mNextState;
             }
+            eventLoopSleep();
         }
     }
 

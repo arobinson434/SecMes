@@ -1,8 +1,10 @@
 #ifndef ABS_CHAT_STATE_H
 #define ABS_CHAT_STATE_H
 
-#include <string>
 #include <sstream>
+#include <string>
+
+#define EVENT_LOOP_SLEEP_MS 100
 
 class ChatMachine;
 class Logger;
@@ -21,6 +23,7 @@ class AbstractChatState {
         void                log(std::string);
         std::string         help();
         bool                processCmd(std::string);
+        void                eventLoopSleep();
         virtual std::string stateHelp();
         virtual bool        processStateCmd(std::string);
 

@@ -18,6 +18,7 @@ AbstractChatState* ChattingChatState::run() {
                 writeToConvo("me: "+msg+"\n");   
             }
         }
+        eventLoopSleep();
     }
 
     log("Connection closed");

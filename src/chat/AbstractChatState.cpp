@@ -1,3 +1,5 @@
+#include <chrono>
+#include <thread>
 #include "ChatMachine.h"
 #include "chat/AbstractChatState.h"
 
@@ -42,6 +44,10 @@ bool AbstractChatState::processCmd(std::string cmd) {
 
     // If nothing hit here, pass on to the state's handler
     return processStateCmd(cmd);
+}
+
+void AbstractChatState::eventLoopSleep() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(EVENT_LOOP_SLEEP_MS));
 }
 
 std::string AbstractChatState::stateHelp() {

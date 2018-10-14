@@ -49,7 +49,6 @@ class UnixSocketNetEngine: public NetEngine {
         bool        mRunning;
         std::string mPort;
         Logger*     mLogger;
-        timeval     mTv;
 
         std::thread*            mRcvThread;
         std::queue<std::string> mRcvQueue;

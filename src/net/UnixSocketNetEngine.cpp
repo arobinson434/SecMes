@@ -12,8 +12,6 @@ UnixSocketNetEngine::UnixSocketNetEngine() {
     mLogger      = Logger::getLogger();
     mIsConnected = false;
     
-    mTv.tv_sec = 0;
-    mTv.tv_usec = 500 * 1000; // 500ms
 }
 
 UnixSocketNetEngine::~UnixSocketNetEngine() {
@@ -47,6 +45,11 @@ void UnixSocketNetEngine::rcvLoop() {
         } else {
             rcvConnection();
         }
+
+        // We won't yield until we 'select' again, and at that point 
+        //  we will have the mutex. Lets yield to see if any other threads
+        //  need the mutex.
+        std::this_thread::yield();
     }
 }
 
@@ -56,8 +59,12 @@ void UnixSocketNetEngine::rcvConnection() {
     sockaddr_storage remoteAddr;
     socklen_t        addrSize  = sizeof remoteAddr;
     fd_set           readFds   = mListenFDs;
+    timeval          tv;
 
-    if ( select(mListenMax, &readFds, NULL, NULL, &mTv) == -1 ) {
+    tv.tv_sec  = 0;
+    tv.tv_usec = 10 * 1000; //10ms
+
+    if ( select(mListenMax, &readFds, NULL, NULL, &tv) == -1 ) {
         log("Failed select in rcvConn()");
         perror("RcvCon Select");
     }
@@ -78,7 +85,9 @@ void UnixSocketNetEngine::rcvConnection() {
 
             mRemoteFD    = tmpFd;
             mIsConnected = true;
-            setsockopt(mRemoteFD, SOL_SOCKET, SO_RCVTIMEO, (const char*)&mTv, sizeof mTv);
+            tv.tv_sec    = 0;
+            tv.tv_usec   = 10 * 1000; //10ms
+            setsockopt(mRemoteFD, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
             log("Accepted Connection from " + std::string(ipstr));
             break;
@@ -89,14 +98,17 @@ void UnixSocketNetEngine::rcvConnection() {
 void UnixSocketNetEngine::rcvMsg() {
     mRemoteFdMutex.lock();
 
-    fd_set remoteSet;
-    char   buff[MAX_BUF];
+    fd_set  remoteSet;
+    char    buff[MAX_BUF];
+    timeval tv;
 
+    tv.tv_sec  = 0;
+    tv.tv_usec = 10 * 1000; //10ms
     memset(buff, 0, MAX_BUF);
     FD_ZERO(&remoteSet);
     FD_SET(mRemoteFD, &remoteSet);
 
-    if ( select(mRemoteFD+1, &remoteSet, NULL, NULL, &mTv) == -1 ) {
+    if ( select(mRemoteFD+1, &remoteSet, NULL, NULL, &tv) == -1 ) {
         log("Failed select in rcvMsg()");
         perror("RcvMsg Select");
     }
@@ -165,7 +177,11 @@ bool UnixSocketNetEngine::connectRemote(std::string ip, std::string port) {
 
     mRemoteFD    = sockfd;
     mIsConnected = true;
-    setsockopt(mRemoteFD, SOL_SOCKET, SO_RCVTIMEO, (const char*)&mTv, sizeof mTv);
+
+    timeval tv;
+    tv.tv_sec  = 0;
+    tv.tv_usec = 10 * 1000; //10ms
+    setsockopt(mRemoteFD, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
     
     log("Successfully connected to "+ip);
 

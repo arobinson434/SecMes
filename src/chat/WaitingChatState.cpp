@@ -17,6 +17,7 @@ AbstractChatState* WaitingChatState::run() {
             std::string msg = getUserInput();
             processCmd( msg );
         }
+        eventLoopSleep();
     }
 
     if ( isConnected() ) {
