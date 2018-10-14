@@ -4,7 +4,7 @@
 #include <sstream>
 #include <string>
 
-#define EVENT_LOOP_SLEEP_MS 100
+#define EVENT_LOOP_SLEEP_MS 10
 
 class ChatMachine;
 class Logger;
