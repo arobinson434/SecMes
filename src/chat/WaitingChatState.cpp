@@ -11,6 +11,7 @@ WaitingChatState::WaitingChatState(ChatMachine* machine):
 
 AbstractChatState* WaitingChatState::run() {
     log("Waiting for connection event");
+    writeToConvo("System: Ready ( run \"/help\", to see available options)\n");
 
     while( !isConnected() && isRunning() ) {
         if ( hasPendingInput() ) {
@@ -44,7 +45,7 @@ bool WaitingChatState::processStateCmd(std::string cmd) {
         ss >> ip >> port;
         
         if ( ip.size() == 0 || port.size() == 0 ) {
-            writeToConvo("System: Failed to parse! please specify the IP and Port\n");
+            writeToConvo("System: Failed to parse! Please specify the IP and Port\n");
         } else {
             log("Attempting to connect to "+ip+":"+port+" ...");
             writeToConvo("System: Attempting to connect to "+ip+":"+port+" ...\n");
