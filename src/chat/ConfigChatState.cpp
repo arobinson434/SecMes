@@ -12,7 +12,7 @@
 ConfigChatState::ConfigChatState(ChatMachine* machine):
     AbstractChatState(machine) {
     mModeName = "ConfigState";
-
+    
     // Set the config directory & file
     passwd* pw = getpwuid(getuid());
     configDir  = std::string(pw->pw_dir) + "/.secmes";
@@ -20,6 +20,7 @@ ConfigChatState::ConfigChatState(ChatMachine* machine):
 }
 
 AbstractChatState* ConfigChatState::run() {
+#ifndef TEST
     if ( !hasConfigDir() ) {
         if ( !createConfigDir() ) {
             setRunning(false);
@@ -31,7 +32,11 @@ AbstractChatState* ConfigChatState::run() {
        createConfig();
 
     loadConfig();
-
+#else
+    log("Configuring fixed settings\n\tUser: TestUser\tPort: 3001");
+    setName("TestUser");
+    initialize("3001");
+#endif
     return new WaitingChatState(mMachine);
 }
 

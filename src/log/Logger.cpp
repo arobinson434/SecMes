@@ -1,7 +1,11 @@
 #include "log/Logger.h"
 
 Logger::Logger() {
+#ifndef TEST
     logFile.open("log.txt", std::ios::app);
+#else
+    logFile.open("test-log.txt", std::ios::app);
+#endif
     //freopen("log.txt", "a", stderr); //TODO: see how terrible this actually is
 }
 

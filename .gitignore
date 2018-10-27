@@ -2,4 +2,5 @@
 build/
 secmes
 log.txt
-test/
+test-secmes
+test-log.txt
