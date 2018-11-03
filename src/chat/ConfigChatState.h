@@ -11,14 +11,16 @@ class ConfigChatState: public AbstractChatState {
         AbstractChatState* run();
 
     private:
-        std::string configDir;
         std::string configFile;
+        std::string secKeyFile;
 
         std::string getInfo();
         bool        hasConfigDir();
         bool        hasConfig();
+        bool        hasSecretKey();
         bool        createConfigDir();
         void        createConfig();
+        void        createSecretKey();
         void        loadConfig();
 };
 

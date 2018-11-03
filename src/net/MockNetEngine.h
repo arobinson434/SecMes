@@ -10,8 +10,6 @@
  */
 class MockNetEngine: public NetEngine {
     public:
-        //MockNetEngine();
-
         bool        hasPendingMsg();
         std::string getMsg();
         int         sendMsg(std::string);
