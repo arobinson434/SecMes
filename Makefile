@@ -1,6 +1,6 @@
 CC      = g++
 INCPATH = -Isrc/
-LDPATH  = -lpthread -lncurses
+LDPATH  = -lpthread -lncurses -lsodium
 STD     = -std=c++11
 FLAGS   = ${INCPATH} ${LDPATH} ${STD}
 

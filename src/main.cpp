@@ -1,7 +1,7 @@
 #include "ChatMachine.h"
 #include "window/NcursesChatWindow.h"
 #include "net/UnixSocketNetEngine.h"
-#include "sec/MockSecEngine.h"
+#include "sec/SodiumSecEngine.h"
 #include "log/Logger.h"
 
 int main() {
@@ -10,7 +10,7 @@ int main() {
 
     NcursesChatWindow   chatWin;
     UnixSocketNetEngine netEng;
-    MockSecEngine       secEng;
+    SodiumSecEngine     secEng;
     ChatMachine         chatMach(&chatWin, &secEng, &netEng);
 
     chatMach.run();

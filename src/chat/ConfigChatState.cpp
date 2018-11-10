@@ -38,7 +38,7 @@ AbstractChatState* ConfigChatState::run() {
     log("Configuring fixed settings\n\tUser: TestUser\tPort: 3001");
     setName("TestUser");
     initializeNetEngine("3001");
-    initializeSecEngine("FakeSecretKey");
+    initializeSecEngine("FakeSecretKey123456789012345678901234567890");
 #endif
     return new WaitingChatState(mMachine);
 }
@@ -147,7 +147,13 @@ void ConfigChatState::loadConfig() {
     std::string   secKey;
     std::ifstream secKeyStream;
     secKeyStream.open(secKeyFile);
-    secKeyStream >> secKey;
+
+    secKeyStream.seekg(0,secKeyStream.end);
+    secKey.reserve(secKeyStream.tellg());
+    secKeyStream.seekg(0,secKeyStream.beg);
+    secKey.assign( (std::istreambuf_iterator<char>(secKeyStream)),
+                    std::istreambuf_iterator<char>());
+    
     initializeSecEngine(secKey);
 
     writeToConvo("Done\n");

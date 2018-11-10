@@ -125,6 +125,7 @@ bool AuthChatState::setServerMode() {
 
 void AuthChatState::validateKey() {
     if ( isKnownPeerName() ) {
+        log("Found existing peer file for "+getPeerName());
         if ( isValidPeerKey() ){
             log("Connected to known user: " + getPeerName());
             writeToConvo("System: Connected to known user: " + getPeerName() + "\n");
@@ -146,10 +147,9 @@ bool AuthChatState::isKnownPeerName() {
     struct stat fileInfo;
 
     if ( stat(mPeerFile.c_str(), &fileInfo) == 0 && \
-         (fileInfo.st_mode & S_IFREG) ) {
-        log("Found existing peer file for "+getPeerName());
+         (fileInfo.st_mode & S_IFREG) )
         return true;
-    }
+
     return false;
 }
 
