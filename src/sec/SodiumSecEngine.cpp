@@ -38,10 +38,19 @@ void SodiumSecEngine::setPeerPublicKey(std::string _peerKey) {
     } else {
         crypto_generichash_init  (&hashState, NULL, 0U,   sizeof sharedKey);
         crypto_generichash_update(&hashState, scalarmult, sizeof scalarmult);
-        crypto_generichash_update(&hashState, publicKey,  sizeof publicKey);
-        crypto_generichash_update(&hashState, peerKey,    sizeof peerKey);
+        if (isServer) {
+            crypto_generichash_update(&hashState, publicKey,  sizeof publicKey);
+            crypto_generichash_update(&hashState, peerKey,    sizeof peerKey);
+        } else {
+            crypto_generichash_update(&hashState, peerKey,    sizeof peerKey);
+            crypto_generichash_update(&hashState, publicKey,  sizeof publicKey);
+        }
         crypto_generichash_final (&hashState, sharedKey,  sizeof sharedKey);
     }
+
+    log("set scalarmult to: "+hexStr(scalarmult, sizeof scalarmult));
+    log("set shared key to: "+hexStr(sharedKey,  sizeof sharedKey));
+    log(" TODO: Remove ^ !");
 }
 
 void SodiumSecEngine::setIsServer(bool _isServer) {
@@ -78,5 +87,5 @@ std::string SodiumSecEngine::encryptMsg(std::string msg) {
 }
 
 void SodiumSecEngine::log(std::string msg) {
-    logger->log("SodiumSecEng: "+msg+"\n");
+    logger->log("SodiumSecEng: "+msg);
 }

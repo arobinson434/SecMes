@@ -63,17 +63,15 @@ bool AuthChatState::getPeerInfo() {
     sendMsg(getName());
     if (waitForPeerName()) {
         log("Got peer username!");
-        log("Sending local public key");
-        sendMsg(getPublicKey());
-        if (waitForPeerKey()) {
-            log("Got peer public key!");
-            log("Sending bid");
-            sendMsg(std::to_string(mLocalBid));
-            if (waitForPeerBid()) {
-                log("Got peer bid!");
-                if (setServerMode()) {
-                    return true;
-                }
+        log("Sending bid");
+        sendMsg(std::to_string(mLocalBid));
+        if (waitForPeerBid() && setServerMode()) {
+            log("Got peer bid!");
+            log("Sending local public key");
+            sendMsg(getPublicKey());
+            if (waitForPeerKey()) {
+                log("Got peer public key!");
+                return true;
             }
         }
     }
