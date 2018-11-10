@@ -1,11 +1,12 @@
 #include <cstring>
+#include <iomanip>
 #include <sstream>
 #include "SodiumSecEngine.h"
 
 std::string hexStr(unsigned char* ar, size_t len) {
     std::stringstream ss;
     for (int i=0; i < len; ++i)
-        ss << std::hex << (int)ar[i];
+        ss << std::setfill('0') << std::setw(2) << std::hex << (int)ar[i];
     return ss.str();
 }
 

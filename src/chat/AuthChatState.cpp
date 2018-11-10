@@ -158,7 +158,13 @@ bool AuthChatState::isValidPeerKey() {
     std::ifstream keyStream;
 
     keyStream.open(mPeerFile);
-    keyStream >> knownKey;
+
+    keyStream.seekg(0,keyStream.end);
+    knownKey.reserve(keyStream.tellg());
+    keyStream.seekg(0,keyStream.beg);
+    knownKey.assign( (std::istreambuf_iterator<char>(keyStream)),
+                    std::istreambuf_iterator<char>());
+
     keyStream.close();
 
     if ( knownKey == mPeerKey )
