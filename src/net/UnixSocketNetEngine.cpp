@@ -3,13 +3,7 @@
 #include <sstream>
 
 #define BACKLOG 10
-
-//TODO: Fix this
-#ifdef CIPHER_TEXT_SIZE
-#define MAX_BUF CIPHER_TEXT_SIZE
-#else
-#define MAX_BUF 1100
-#endif
+#define MAX_BUF 1500
 
 UnixSocketNetEngine::UnixSocketNetEngine() {
     FD_ZERO(&mListenFDs);

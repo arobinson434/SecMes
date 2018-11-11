@@ -21,15 +21,15 @@ class SodiumSecEngine: public SecEngine {
     private:
         void log(std::string);
     
-        Logger* logger;
-        bool    isServer;
-        unsigned char    secretKey[crypto_box_SECRETKEYBYTES];
-        unsigned char    publicKey[crypto_box_PUBLICKEYBYTES];
-        unsigned char    peerKey  [crypto_box_PUBLICKEYBYTES];
-        unsigned char    rxNonce  [crypto_secretbox_NONCEBYTES];
-        unsigned char    rxKey    [crypto_generichash_BYTES];
-        unsigned char    txNonce  [crypto_secretbox_NONCEBYTES];
-        unsigned char    txKey    [crypto_generichash_BYTES];
+        Logger*       mLogger;
+        bool          mIsServer;
+        unsigned char mSecretKey[crypto_box_SECRETKEYBYTES];
+        unsigned char mPublicKey[crypto_box_PUBLICKEYBYTES];
+        unsigned char mPeerKey  [crypto_box_PUBLICKEYBYTES];
+        unsigned char mRxNonce  [crypto_secretbox_NONCEBYTES];
+        unsigned char mRxKey    [crypto_generichash_BYTES];
+        unsigned char mTxNonce  [crypto_secretbox_NONCEBYTES];
+        unsigned char mTxKey    [crypto_generichash_BYTES];
 };
 
 #endif
