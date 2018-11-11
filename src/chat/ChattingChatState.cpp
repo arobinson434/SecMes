@@ -9,12 +9,13 @@ ChattingChatState::ChattingChatState(ChatMachine* machine):
 
 AbstractChatState* ChattingChatState::run() {
     while ( isConnected() && isRunning() ) {
-        if ( hasPendingMsg() )
-            writeToConvo(getPeerName()+": "+getMsg()+"\n");   
+        if ( hasPendingMsg() ) {
+            writeToConvo(getPeerName()+": "+decryptMsg(getMsg())+"\n");   
+        }
         if ( hasPendingInput() ) {
             std::string msg = getUserInput();
             if ( !processCmd(msg) ) {
-                sendMsg(msg);
+                sendMsg(encryptMsg(msg));
                 writeToConvo("me: "+msg+"\n");   
             }
         }

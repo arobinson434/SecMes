@@ -3,7 +3,13 @@
 #include <sstream>
 
 #define BACKLOG 10
-#define MAX_BUF 1024
+
+//TODO: Fix this
+#ifdef CIPHER_TEXT_SIZE
+#define MAX_BUF CIPHER_TEXT_SIZE
+#else
+#define MAX_BUF 1100
+#endif
 
 UnixSocketNetEngine::UnixSocketNetEngine() {
     FD_ZERO(&mListenFDs);
@@ -120,7 +126,7 @@ void UnixSocketNetEngine::rcvMsg() {
             log("Remote end disconnected");
             disconnect();
         } else {
-            mRcvQueue.push(std::string(buff));
+            mRcvQueue.push(std::string(buff, recBytes));
         }
     }
 }

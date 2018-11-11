@@ -25,10 +25,11 @@ class SodiumSecEngine: public SecEngine {
         bool    isServer;
         unsigned char    secretKey[crypto_box_SECRETKEYBYTES];
         unsigned char    publicKey[crypto_box_PUBLICKEYBYTES];
-        unsigned char    sharedKey[crypto_generichash_BYTES*2];
         unsigned char    peerKey  [crypto_box_PUBLICKEYBYTES];
-        int     rxNonce;
-        int     txNonce;
+        unsigned char    rxNonce  [crypto_secretbox_NONCEBYTES];
+        unsigned char    rxKey    [crypto_generichash_BYTES];
+        unsigned char    txNonce  [crypto_secretbox_NONCEBYTES];
+        unsigned char    txKey    [crypto_generichash_BYTES];
 };
 
 #endif
