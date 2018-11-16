@@ -1,4 +1,5 @@
 #include "net/UnixSocketNetEngine.h"
+#include <cstdint>
 #include <cstring>
 #include <sstream>
 
@@ -120,21 +121,55 @@ void UnixSocketNetEngine::rcvMsg() {
             log("Remote end disconnected");
             disconnect();
         } else {
-            mRcvQueue.push(std::string(buff, recBytes));
+            processMsgs(buff, recBytes);
         }
     }
+}
+
+void UnixSocketNetEngine::processMsgs(char* buffer, size_t len) {
+    int   bytesToRead = len;
+    int   offset      = 0;
+
+    do {
+        buffer += offset;
+        uint16_t msgSize;
+        memcpy(&msgSize, buffer, 2);
+
+        if ( msgSize > (bytesToRead-offset) ) {
+            log("Invalid message length! Dumping buffer.");
+            break;
+        }
+
+        uint8_t footer;
+        memcpy(&footer, buffer+(msgSize-1), 1);
+
+        if ( footer != 0xaa ) {
+            log("Improperly formatted message! Dumping buffer.");
+            break;
+        }
+
+        mRcvQueue.push(std::string(buffer+2, msgSize-3));
+        offset  += msgSize;
+    } while ( offset < bytesToRead );
 }
 
 int UnixSocketNetEngine::sendMsg(std::string msg) {
     std::lock_guard<std::recursive_mutex> lock(mRemoteFdMutex);
 
-    int sentBytes = 0;
+    int      sentBytes  = 0;
+    uint16_t msgBuffLen = msg.length()+3; // 2B header + 1B footer
+    char*    msgBuff    = new char[msgBuffLen]();
 
-    sentBytes = send(mRemoteFD, msg.c_str(), msg.length(), 0);
+    memcpy(msgBuff,                &msgBuffLen, 2);
+    memcpy(msgBuff+2,              msg.c_str(), msg.length());
+    memset(msgBuff+2+msg.length(), 0xaa,        1);
+
+    sentBytes = send(mRemoteFD, msgBuff, msgBuffLen, 0);
     if (sentBytes == -1) {
         log("Failed to send message");
         perror("Send");
     }
+    delete msgBuff;
 
     return sentBytes;
 }

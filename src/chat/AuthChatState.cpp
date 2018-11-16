@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iomanip>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
@@ -37,6 +38,7 @@ AbstractChatState* AuthChatState::run() {
 
     if ( mWaitingOnResponse ) {
         log("Going back to waiting");
+        disconnect();
         writeToConvo("System: Connection closed\n");
         mNextState =  new WaitingChatState(mMachine);
     }
@@ -65,7 +67,7 @@ bool AuthChatState::getPeerInfo() {
         log("Got peer username!");
         log("Sending bid");
         sendMsg(std::to_string(mLocalBid));
-        if (waitForPeerBid() && setServerMode()) {
+        if (waitForPeerBid()) {
             log("Got peer bid!");
             log("Sending local public key");
             sendMsg(getPublicKey());
