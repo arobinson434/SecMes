@@ -14,9 +14,8 @@ ConfigChatState::ConfigChatState(ChatMachine* machine):
     mModeName = "ConfigState";
     
     // Set the config directory & file
-    passwd* pw = getpwuid(getuid());
-    configDir  = std::string(pw->pw_dir) + "/.secmes";
-    configFile = configDir + "/config";
+    configFile = mConfigDir + "/config";
+    secKeyFile = mConfigDir + "/.seckey";
 }
 
 AbstractChatState* ConfigChatState::run() {
@@ -31,11 +30,15 @@ AbstractChatState* ConfigChatState::run() {
     if ( !hasConfig() )
        createConfig();
 
+    if ( !hasSecretKey() )
+       createSecretKey();
+
     loadConfig();
 #else
     log("Configuring fixed settings\n\tUser: TestUser\tPort: 3001");
     setName("TestUser");
-    initialize("3001");
+    initializeNetEngine("3001");
+    initializeSecEngine("FakeSecretKey123456789012345678901234567890");
 #endif
     return new WaitingChatState(mMachine);
 }
@@ -43,13 +46,13 @@ AbstractChatState* ConfigChatState::run() {
 bool ConfigChatState::hasConfigDir() {
     struct stat dirInfo;
 
-    if ( stat(configDir.c_str(), &dirInfo) == 0 && \
+    if ( stat(mConfigDir.c_str(), &dirInfo) == 0 && \
          (dirInfo.st_mode & S_IFDIR) ) {
         log("Found existing config directory");
         return true;
     }
 
-    log("Failed to find existing config directory: " + configDir);
+    log("Failed to find existing config directory: " + mConfigDir);
     return false;
 }
 
@@ -66,9 +69,22 @@ bool ConfigChatState::hasConfig() {
     return false;
 }
 
+bool ConfigChatState::hasSecretKey() {
+    struct stat fileInfo;
+
+    if ( stat(secKeyFile.c_str(), &fileInfo) == 0 && \
+         (fileInfo.st_mode & S_IFREG) ) {
+        log("Found existing secret key file");
+        return true;
+    }
+
+    log("Failed to find existing secret key file: " + secKeyFile);
+    return false;
+}
+
 bool ConfigChatState::createConfigDir() {
     log("Creating the config directory");
-    if ( mkdir(configDir.c_str(), DIR_FLAGS) != 0 ) {
+    if ( mkdir(mConfigDir.c_str(), DIR_FLAGS) != 0 ) {
         perror("ConfigDir");
         log("Failed to create config directory");
         return false;
@@ -102,9 +118,17 @@ void ConfigChatState::createConfig() {
     writeToConvo("System: Configuration successfully written\n");
 }
 
+void ConfigChatState::createSecretKey() {
+    std::ofstream secKeyStream;
+    secKeyStream.open(secKeyFile);
+    secKeyStream << generateSecretKey();
+    secKeyStream.close();
+}
+
 void ConfigChatState::loadConfig() {
     writeToConvo("System: Loading config... ");
 
+    // Load the config file
     std::string   username, port;
     std::ifstream configStream;
     configStream.open(configFile);
@@ -116,7 +140,21 @@ void ConfigChatState::loadConfig() {
     log("From config, username = "+username);
     setName(username);
     log("From config, port = "+port);
-    initialize(port);
+    initializeNetEngine(port);
+
+    // Load the secret key
+    log("Loading secret key");
+    std::string   secKey;
+    std::ifstream secKeyStream;
+    secKeyStream.open(secKeyFile);
+
+    secKeyStream.seekg(0,secKeyStream.end);
+    secKey.reserve(secKeyStream.tellg());
+    secKeyStream.seekg(0,secKeyStream.beg);
+    secKey.assign( (std::istreambuf_iterator<char>(secKeyStream)),
+                    std::istreambuf_iterator<char>());
+    
+    initializeSecEngine(secKey);
 
     writeToConvo("Done\n");
 }

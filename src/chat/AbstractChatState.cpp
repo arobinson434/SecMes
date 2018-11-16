@@ -6,6 +6,9 @@
 AbstractChatState::AbstractChatState(ChatMachine* machine) {
     mMachine = machine;
     mLogger  = Logger::getLogger();
+
+    passwd* pw = getpwuid(getuid());
+    mConfigDir  = std::string(pw->pw_dir) + "/.secmes";
 }
 
 AbstractChatState::~AbstractChatState() {}
@@ -107,12 +110,44 @@ void AbstractChatState::disconnect() {
     mMachine->mNetEng->disconnect();
 }
 
-void AbstractChatState::initialize(std::string port) {
+void AbstractChatState::initializeNetEngine(std::string port) {
     mMachine->mNetEng->initialize(port);
 }
 
+void AbstractChatState::initializeSecEngine(std::string secretKey) {
+    mMachine->mSecEng->initialize(secretKey);
+}
+
+void AbstractChatState::setPeerPublicKey(std::string peerKey) {
+    mMachine->mSecEng->setPeerPublicKey(peerKey);
+}
+
+void AbstractChatState::setIsServer(bool isServer) {
+    mMachine->mSecEng->setIsServer(isServer);
+}
+
+void AbstractChatState::cleanSecEngine() {
+    mMachine->mSecEng->clean();
+}
+
+std::string AbstractChatState::getPublicKey() {
+    return mMachine->mSecEng->getPublicKey();
+}
+
+std::string AbstractChatState::generateSecretKey() {
+    return mMachine->mSecEng->generateSecretKey();
+}
+
+std::string AbstractChatState::decryptMsg(std::string cipherText) {
+    return mMachine->mSecEng->decryptMsg(cipherText);
+}
+
+std::string AbstractChatState::encryptMsg(std::string msg) {
+    return mMachine->mSecEng->encryptMsg(msg);
+}
+
 bool AbstractChatState::hasPendingInput() {
-    mMachine->mChatWin->hasPendingInput();
+    return mMachine->mChatWin->hasPendingInput();
 }
 
 std::string AbstractChatState::getUserInput() {
