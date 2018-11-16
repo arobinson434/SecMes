@@ -22,10 +22,8 @@ backend implementations of the socket and encryption code.
 
 ### State Machine
 At the top level, the chat app is a state machine of type `ChatMachine`. At
-construction, the machine is handed pointers to a `NetEngine`, a `SecEngine`
-(optional), and a `ChatWindow` (more on these below). The chat app traverses
-these states:
-
+construction, the machine is handed pointers to a `NetEngine`, a `SecEngine`,
+and a `ChatWindow` (more on these below). The chat app traverses these states:
 ```
    +--------------------+
    |                    |
@@ -64,9 +62,9 @@ information such as, the port to host on, the local user name, etc.
 * `WaitingChatState` - during this stage, the app is waiting for either, an
 incoming connection, or a request to send an outgoing connection. Once there is
 a connection in place, this stage will hand things off to the `AuthChatState`.
-* `AuthChatState` - this stage will, once the `SecEngine` is fleshed out, be
-responsible for exchanging certs, verifying that we trust the remote end,
-and allowing the user to accept/reject connections from unknown sources.
+* `AuthChatState` - this stage is responsible for gathering information about
+the remote host, validating said information, and allowing the user to accept
+or reject the connection.
 * `ChattingChatState` - yep, its a terrible name, anyhow, this is where the two
 ends can actually communicate!
 
@@ -82,7 +80,8 @@ Here are the three abstractions and a rough description of their interfaces:
 this class. In doing so, it will define routines for doing things such as,
 handling connection events, and sending and receiving messages.
 * `SecEngine` - Any encryption library should be wrapped in code that inherits
-from this class. What that interface should look like is still TBD.
+from this class. In doing so, it will provide functions for generating keys, and
+encrypting/decrypting messages.
 * `ChatWindow` - The user interface, however implemented, should be wrapped in
 code that inherits from this class. In doing so, it will expose a generic
 interface for displaying info to the user, and getting input from the user.
@@ -97,8 +96,10 @@ helpful for testing.
 of the `NetEngine` using unix sockets.
     * Future Work - Maybe write a `boost` implementation.
 * `SecEngine`
-    * `TBD` - I have yet to write an implementation for the this interface. I
-will probably settle on something like `libsodium` when I do.
+    * `MockSecEngine` - This class implements a more or less empty security
+engine. It does not actually encrypt anything, but is useful for testing.
+    * `SodiumSecEngine` - This class implements all of the methods required by
+`SecEngine` using `libsodium`.
 * `ChatWindow`
     * `NcursesChatwindow` - This class implements all of the needed interfaces
 of the `ChatWindow` using `ncurses`.
