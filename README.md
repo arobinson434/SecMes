@@ -1,4 +1,4 @@
-# SecMes [WIP]
+# SecMes
 In an effort to both brush up on C++, and learn more about sockets and
 encryption libraries, I decided to write a fairly simple p2p messaging app. This
 repo is the proving ground for that effort.
