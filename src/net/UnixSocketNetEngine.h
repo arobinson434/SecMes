@@ -41,7 +41,6 @@ class UnixSocketNetEngine: public NetEngine {
         void        rcvLoop();
         void        rcvConnection();
         void        rcvMsg();
-        void        processMsgs(char*, size_t);
 
         fd_set      mListenFDs;
         int         mListenMax;

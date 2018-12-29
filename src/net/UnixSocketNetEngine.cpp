@@ -1,7 +1,9 @@
-#include "net/UnixSocketNetEngine.h"
 #include <cstdint>
 #include <cstring>
 #include <sstream>
+
+#include "net/Message.h"
+#include "net/UnixSocketNetEngine.h"
 
 #define BACKLOG 10
 #define MAX_BUF 1500
@@ -12,7 +14,6 @@ UnixSocketNetEngine::UnixSocketNetEngine() {
     mListenMax   = mRemoteFD = 0;
     mLogger      = Logger::getLogger();
     mIsConnected = false;
-    
 }
 
 UnixSocketNetEngine::~UnixSocketNetEngine() {
@@ -116,60 +117,27 @@ void UnixSocketNetEngine::rcvMsg() {
     }
 
     if ( FD_ISSET(mRemoteFD, &remoteSet) ) {
-        int recBytes = recv(mRemoteFD, buff, MAX_BUF, 0); 
+        size_t recBytes = recv(mRemoteFD, buff, MAX_BUF, 0); 
         if (recBytes == 0) {
             log("Remote end disconnected");
             disconnect();
         } else {
-            processMsgs(buff, recBytes);
+            for(auto x: Message::unpackBuffer(buff, recBytes)){
+                mRcvQueue.push(x);
+            }    
         }
     }
-}
-
-void UnixSocketNetEngine::processMsgs(char* buffer, size_t len) {
-    int   bytesToRead = len;
-    int   offset      = 0;
-
-    do {
-        buffer += offset;
-        uint16_t msgSize;
-        memcpy(&msgSize, buffer, 2);
-
-        if ( msgSize > (bytesToRead-offset) ) {
-            log("Invalid message length! Dumping buffer.");
-            break;
-        }
-
-        uint8_t footer;
-        memcpy(&footer, buffer+(msgSize-1), 1);
-
-        if ( footer != 0xaa ) {
-            log("Improperly formatted message! Dumping buffer.");
-            break;
-        }
-
-        mRcvQueue.push(std::string(buffer+2, msgSize-3));
-        offset  += msgSize;
-    } while ( offset < bytesToRead );
 }
 
 int UnixSocketNetEngine::sendMsg(std::string msg) {
     std::lock_guard<std::recursive_mutex> lock(mRemoteFdMutex);
-
-    int      sentBytes  = 0;
-    uint16_t msgBuffLen = msg.length()+3; // 2B header + 1B footer
-    char*    msgBuff    = new char[msgBuffLen]();
-
-    memcpy(msgBuff,                &msgBuffLen, 2);
-    memcpy(msgBuff+2,              msg.c_str(), msg.length());
-    memset(msgBuff+2+msg.length(), 0xaa,        1);
-
-    sentBytes = send(mRemoteFD, msgBuff, msgBuffLen, 0);
+    
+    std::string packedMsg = Message::pack(msg);
+    size_t      sentBytes = send(mRemoteFD, packedMsg.c_str(), packedMsg.size(), 0);
     if (sentBytes == -1) {
         log("Failed to send message");
         perror("Send");
     }
-    delete msgBuff;
 
     return sentBytes;
 }
